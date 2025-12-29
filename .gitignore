@@ -45,10 +45,11 @@ logs
 .idea/
 .qodo/
 .vercel
-.roo/mcp.json
+.roo/
 
 # Qdrant
 qdrant_storage/
 
 # Architect plans
 plans/
+.github/ISSUE_BODY.md
