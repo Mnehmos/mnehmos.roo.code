@@ -76,6 +76,10 @@ export const toolParamNames = [
 	"old_string", // search_replace and edit_file parameter
 	"new_string", // search_replace and edit_file parameter
 	"expected_replacements", // edit_file parameter for multiple occurrences
+	"task_id", // resume_subtask: ID of completed subtask to resume
+	"follow_up_message", // resume_subtask: New instructions for resumed subtask
+	"preserve_todos", // resume_subtask: Keep original todo list (optional)
+	"context_strategy", // resume_subtask: full|summarize|truncate (optional)
 ] as const
 
 export type ToolParamName = (typeof toolParamNames)[number]
@@ -226,6 +230,22 @@ export interface NewTaskToolUse extends ToolUse<"new_task"> {
 	params: Partial<Pick<Record<ToolParamName, string>, "mode" | "message" | "todos">>
 }
 
+/**
+ * Tool use interface for the resume_subtask tool.
+ * Enables warm context continuation for previously completed subtasks.
+ *
+ * @param task_id - Required: ID of the completed subtask to resume
+ * @param follow_up_message - Required: New instructions for the resumed subtask
+ * @param preserve_todos - Optional: Whether to keep the original todo list (default: true)
+ * @param context_strategy - Optional: "full" | "summarize" | "truncate" (default: "full")
+ */
+export interface ResumeSubtaskToolUse extends ToolUse<"resume_subtask"> {
+	name: "resume_subtask"
+	params: Partial<
+		Pick<Record<ToolParamName, string>, "task_id" | "follow_up_message" | "preserve_todos" | "context_strategy">
+	>
+}
+
 export interface RunSlashCommandToolUse extends ToolUse<"run_slash_command"> {
 	name: "run_slash_command"
 	params: Partial<Pick<Record<ToolParamName, string>, "command" | "args">>
@@ -262,6 +282,7 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	attempt_completion: "complete tasks",
 	switch_mode: "switch modes",
 	new_task: "create new task",
+	resume_subtask: "resume subtask",
 	codebase_search: "codebase search",
 	update_todo_list: "update todo list",
 	run_slash_command: "run slash command",
@@ -298,6 +319,7 @@ export const ALWAYS_AVAILABLE_TOOLS: ToolName[] = [
 	"attempt_completion",
 	"switch_mode",
 	"new_task",
+	"resume_subtask",
 	"update_todo_list",
 	"run_slash_command",
 ] as const

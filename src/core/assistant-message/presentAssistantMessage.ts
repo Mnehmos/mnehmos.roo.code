@@ -35,6 +35,7 @@ import { askFollowupQuestionTool } from "../tools/AskFollowupQuestionTool"
 import { switchModeTool } from "../tools/SwitchModeTool"
 import { attemptCompletionTool, AttemptCompletionCallbacks } from "../tools/AttemptCompletionTool"
 import { newTaskTool } from "../tools/NewTaskTool"
+import { resumeSubtaskTool } from "../tools/ResumeSubtaskTool"
 import { updateTodoListTool } from "../tools/UpdateTodoListTool"
 import { runSlashCommandTool } from "../tools/RunSlashCommandTool"
 import { generateImageTool } from "../tools/GenerateImageTool"
@@ -426,6 +427,11 @@ export async function presentAssistantMessage(cline: Task) {
 						const message = block.params.message ?? "(no message)"
 						const modeName = getModeBySlug(mode, customModes)?.name ?? mode
 						return `[${block.name} in ${modeName} mode: '${message}']`
+					}
+					case "resume_subtask": {
+						const taskId = block.params.task_id ?? "(no task_id)"
+						const strategy = block.params.context_strategy ?? "full"
+						return `[${block.name} for task '${taskId}' with strategy '${strategy}']`
 					}
 					case "run_slash_command":
 						return `[${block.name} for '${block.params.command}'${block.params.args ? ` with args: ${block.params.args}` : ""}]`
@@ -1010,6 +1016,15 @@ export async function presentAssistantMessage(cline: Task) {
 						removeClosingTag,
 						toolProtocol,
 						toolCallId: block.id,
+					})
+					break
+				case "resume_subtask":
+					await resumeSubtaskTool.handle(cline, block as ToolUse<"resume_subtask">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+						toolProtocol,
 					})
 					break
 				case "attempt_completion": {

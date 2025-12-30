@@ -12,6 +12,7 @@ import generateImage from "./generate_image"
 import listFiles from "./list_files"
 import newTask from "./new_task"
 import { createReadFileTool } from "./read_file"
+import resumeSubtask from "./resume_subtask"
 import runSlashCommand from "./run_slash_command"
 import searchAndReplace from "./search_and_replace"
 import searchReplace from "./search_replace"
@@ -45,6 +46,7 @@ export function getNativeTools(partialReadsEnabled: boolean = true): OpenAI.Chat
 		listFiles,
 		newTask,
 		createReadFileTool(partialReadsEnabled),
+		resumeSubtask,
 		runSlashCommand,
 		searchAndReplace,
 		searchReplace,

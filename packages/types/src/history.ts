@@ -35,6 +35,16 @@ export const historyItemSchema = z.object({
 	awaitingChildId: z.string().optional(), // Child currently awaited (set when delegated)
 	completedByChildId: z.string().optional(), // Child that completed and resumed this parent
 	completionResultSummary: z.string().optional(), // Summary from completed child
+	/** Whether this task can be resumed by its parent via resume_subtask tool */
+	resumable: z.boolean().optional(),
+	/** ID of the original task this task was resumed from (for tracking resume chains) */
+	resumedFromId: z.string().optional(),
+	/** Number of times this task has been resumed (starts at 0, increments on each resume) */
+	resumeCount: z.number().optional(),
+	/** Timestamp of the last time this task was resumed (Unix epoch milliseconds) */
+	lastResumedAt: z.number().optional(),
+	/** IDs of children that have been resumed into this parent via resume_subtask tool */
+	resumedChildIds: z.array(z.string()).optional(),
 })
 
 export type HistoryItem = z.infer<typeof historyItemSchema>

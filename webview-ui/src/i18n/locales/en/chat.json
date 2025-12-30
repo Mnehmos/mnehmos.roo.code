@@ -277,6 +277,8 @@
 		"newTaskContent": "Subtask Instructions",
 		"completionContent": "Subtask Completed",
 		"resultContent": "Subtask Results",
+		"resumeContext": "Resumed Subtask Context",
+		"resumeStrategy": "Strategy: {{strategy}} | Child Task: {{childId}}",
 		"defaultResult": "Please continue to the next task.",
 		"completionInstructions": "Subtask completed! You can review the results and suggest any corrections or next steps. If everything looks good, confirm to return the result to the parent task."
 	},

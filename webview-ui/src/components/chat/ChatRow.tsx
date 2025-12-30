@@ -1032,6 +1032,62 @@ export const ChatRowContent = ({
 							</div>
 						</div>
 					)
+				case "resume_context":
+					// Parse the JSON context
+					let resumeData = { childTaskId: "", strategy: "", context: "" }
+					try {
+						resumeData = JSON.parse(message.text || "{}")
+					} catch {
+						// Ignore parse errors, use default values
+					}
+					return (
+						<div>
+							<div
+								style={{
+									marginTop: "0px",
+									backgroundColor: "var(--vscode-badge-background)",
+									border: "1px solid var(--vscode-badge-background)",
+									borderRadius: "0 0 4px 4px",
+									overflow: "hidden",
+									marginBottom: "8px",
+								}}>
+								<div
+									style={{
+										padding: "9px 10px 9px 14px",
+										backgroundColor: "var(--vscode-badge-background)",
+										borderBottom: "1px solid var(--vscode-editorGroup-border)",
+										fontWeight: "bold",
+										fontSize: "var(--vscode-font-size)",
+										color: "var(--vscode-badge-foreground)",
+										display: "flex",
+										alignItems: "center",
+										gap: "6px",
+									}}>
+									<span className="codicon codicon-history"></span>
+									{t("chat:subtasks.resumeContext")}
+								</div>
+								<div
+									style={{
+										padding: "12px 16px",
+										backgroundColor: "var(--vscode-editor-background)",
+									}}>
+									<div style={{ fontSize: "0.9em", opacity: 0.8, marginBottom: "8px" }}>
+										{t("chat:subtasks.resumeStrategy", {
+											strategy: resumeData.strategy,
+											childId: resumeData.childTaskId,
+										})}
+									</div>
+									<MarkdownBlock
+										markdown={
+											typeof resumeData.context === "string"
+												? resumeData.context
+												: JSON.stringify(resumeData.context, null, 2)
+										}
+									/>
+								</div>
+							</div>
+						</div>
+					)
 				case "reasoning":
 					return (
 						<ReasoningBlock

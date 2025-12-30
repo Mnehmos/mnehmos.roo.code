@@ -3269,6 +3269,106 @@ export class ClineProvider
 	}
 
 	/**
+	 * Resume a completed child task by injecting its context back into the parent.
+	 * This allows the parent to continue working with the results from the child.
+	 */
+	public async resumeCompletedChild(params: {
+		parentTaskId: string
+		childTaskId: string
+		contextStrategy: "summary" | "last_n_messages" | "full_history"
+		includeFullHistory?: boolean
+	}): Promise<void> {
+		const { parentTaskId, childTaskId, contextStrategy } = params
+		const globalStoragePath = this.contextProxy.globalStorageUri.fsPath
+
+		// Load task history
+		const history = (this.getGlobalState("taskHistory") as HistoryItem[] | undefined) || []
+
+		// 1) Validation: Parent task must exist
+		const parentHistory = history.find((item) => item.id === parentTaskId)
+		if (!parentHistory) {
+			throw new Error(`Parent task not found: ${parentTaskId}`)
+		}
+
+		// 2) Validation: Child task must exist
+		const childHistory = history.find((item) => item.id === childTaskId)
+		if (!childHistory) {
+			throw new Error(`Child task not found: ${childTaskId}`)
+		}
+
+		// 3) Validation: Child must be in parent's childIds
+		const parentChildIds = parentHistory.childIds ?? []
+		if (!parentChildIds.includes(childTaskId)) {
+			throw new Error(`Child task ${childTaskId} is not in parent's childIds`)
+		}
+
+		// 4) Validation: Child must be completed
+		if (childHistory.status !== "completed") {
+			throw new Error(`Child task ${childTaskId} status is '${childHistory.status}', not 'completed'`)
+		}
+
+		// 5) Load child's clineMessages for context extraction
+		let childClineMessages: import("@roo-code/types").ClineMessage[] = []
+		try {
+			childClineMessages = await readTaskMessages({
+				taskId: childTaskId,
+				globalStoragePath,
+			})
+		} catch {
+			childClineMessages = []
+		}
+
+		// 6) Build context based on strategy
+		let context: unknown
+		switch (contextStrategy) {
+			case "summary":
+				context = childHistory.completionResultSummary ?? ""
+				break
+			case "last_n_messages":
+				// Last 10 messages
+				context = childClineMessages.slice(-10)
+				break
+			case "full_history":
+				context = childClineMessages
+				break
+		}
+
+		// 7) Load parent's clineMessages and inject synthetic resume_context message
+		let parentClineMessages: import("@roo-code/types").ClineMessage[] = []
+		try {
+			parentClineMessages = await readTaskMessages({
+				taskId: parentTaskId,
+				globalStoragePath,
+			})
+		} catch {
+			parentClineMessages = []
+		}
+
+		// Ensure arrays
+		if (!Array.isArray(parentClineMessages)) parentClineMessages = []
+
+		const resumeContextMessage: import("@roo-code/types").ClineMessage = {
+			type: "say",
+			say: "resume_context" as any,
+			text: JSON.stringify({ childTaskId, strategy: contextStrategy, context }),
+			ts: Date.now(),
+		}
+		parentClineMessages.push(resumeContextMessage)
+		await saveTaskMessages({ messages: parentClineMessages, taskId: parentTaskId, globalStoragePath })
+
+		// 8) Update parent history: add to resumedChildIds, clear awaitingChildId if matches
+		const existingResumedChildIds = parentHistory.resumedChildIds ?? []
+		const resumedChildIds = Array.from(new Set([...existingResumedChildIds, childTaskId]))
+
+		const updatedParentHistory: typeof parentHistory = {
+			...parentHistory,
+			resumedChildIds,
+			awaitingChildId: parentHistory.awaitingChildId === childTaskId ? undefined : parentHistory.awaitingChildId,
+		}
+		await this.updateTaskHistory(updatedParentHistory)
+	}
+
+	/**
 	 * Convert a file path to a webview-accessible URI
 	 * This method safely converts file paths to URIs that can be loaded in the webview
 	 *
